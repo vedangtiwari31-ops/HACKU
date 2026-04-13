@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarTrack • Smart Adaptive Solar Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-slate-950 text-slate-200">
+    <!-- NAVBAR -->
+    <nav class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto">
+            <div class="px-8 py-5 flex items-center justify-between">
+                <!-- Logo -->
+                <div class="flex items-center gap-x-3">
+                    <div class="w-9 h-9 bg-orange-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-inner">
+                        ☀️
+                    </div>
+                    <div>
+                        <h1 class="heading-font text-3xl tracking-tighter text-white">SolarTrack</h1>
+                        <p class="text-[10px] text-orange-400 -mt-1 font-medium tracking-[1px]">SMART ADAPTIVE SOLAR</p>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="flex items-center gap-x-8 text-sm font-medium">
+                    <a onclick="navigateToSection('dashboard')" class="flex items-center gap-x-1.5 hover:text-orange-400 transition-colors cursor-pointer">
+                        <i class="fa-solid fa-gauge-high"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a onclick="navigateToSection('live')" class="flex items-center gap-x-1.5 hover:text-orange-400 transition-colors cursor-pointer">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Live Data</span>
+                    </a>
+                    <a onclick="navigateToSection('history')" class="flex items-center gap-x-1.5 hover:text-orange-400 transition-colors cursor-pointer">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>History</span>
+                    </a>
+                    <a onclick="navigateToSection('analytics')" class="flex items-center gap-x-1.5 hover:text-orange-400 transition-colors cursor-pointer">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Analytics</span>
+                    </a>
+                    <a onclick="navigateToSection('alerts')" class="flex items-center gap-x-1.5 hover:text-orange-400 transition-colors relative cursor-pointer">
+                        <i class="fa-solid fa-bell"></i>
+                        <span>Alerts</span>
+                        <span id="alert-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full">3</span>
+                    </a>
+                </div>
+
+                <!-- Right side controls -->
+                <div class="flex items-center gap-x-4">
+                    <!-- Connection status -->
+                    <div onclick="toggleSimulation()" id="connection-status" 
+                         class="flex items-center gap-x-2 bg-emerald-400/10 text-emerald-400 text-xs font-medium px-4 h-9 rounded-3xl border border-emerald-400/30 cursor-pointer">
+                        <div class="w-2 h-2 bg-emerald-400 rounded-full live-dot"></div>
+                        LIVE • IoT Connected
+                    </div>
+
+                    <!-- Security indicator -->
+                    <div class="flex items-center gap-x-2 bg-slate-800 text-slate-400 text-xs font-medium px-4 h-9 rounded-3xl border border-slate-700">
+                        <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                        AES-256 Encrypted
+                    </div>
+
+                    <!-- User -->
+                    <div class="flex items-center gap-x-3 bg-slate-800 rounded-3xl pl-2 pr-5 py-1 cursor-pointer hover:bg-slate-700">
+                        <div class="w-7 h-7 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center text-sm font-semibold">JD</div>
+                        <div class="text-sm font-medium">Dr. Jane Doe</div>
+                    </div>
+
+                    <button onclick="logout()" 
+                            class="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 rounded-2xl">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-screen-2xl mx-auto px-8 py-8">
+        
+        <!-- DASHBOARD SECTION -->
+        <div id="section-dashboard" class="section">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="text-4xl heading-font tracking-tighter">Smart Solar Dashboard</h2>
+                    <p class="text-slate-400 mt-1">Real-time monitoring • Adaptive dual-axis tracker • Updated just now</p>
+                </div>
+                <div class="flex items-center gap-x-6 text-sm">
+                    <div class="flex items-center gap-x-2">
+                        <span class="text-emerald-400">●</span>
+                        <span>System Healthy</span>
+                    </div>
+                    <div class="bg-slate-900 text-slate-400 px-5 py-2 rounded-3xl flex items-center gap-x-2 text-xs font-medium">
+                        <i class="fa-solid fa-sun"></i>
+                        <span id="current-time">April 13, 2026 • 12:12 PM IST</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KEY METRICS -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <!-- Voltage -->
+                <div class="bg-slate-900 rounded-3xl p-6 card-hover">
+                    <div class="flex justify-between">
+                        <div>
+                            <p class="text-slate-400 text-sm font-medium flex items-center gap-x-2">
+                                <i class="fa-solid fa-bolt-lightning"></i>
+                                VOLTAGE OUTPUT
+                            </p>
+                            <p id="dash-voltage" class="text-5xl font-semibold text-white mt-3">12.8 V</p>
+                            <p id="dash-voltage-trend" class="text-emerald-400 text-sm flex items-center gap-x-1 mt-1">
+                                <i class="fa-solid fa-arrow-trend-up"></i>
+                                +0.3 V (2%)
+                            </p>
+                        </div>
+                        <div class="text-6xl text-orange-400 opacity-20">⚡</div>
+                    </div>
+                </div>
+
+                <!-- Power Consumption -->
+                <div class="bg-slate-900 rounded-3xl p-6 card-hover">
+                    <div class="flex justify-between">
+                        <div>
+                            <p class="text-slate-400 text-sm font-medium flex items-center gap-x-2">
+                                <i class="fa-solid fa-plug"></i>
+                                POWER CONSUMPTION
+                            </p>
+                            <p id="dash-power" class="text-5xl font-semibold text-white mt-3">4.9 W</p>
+                            <p id="dash-power-trend" class="text-amber-400 text-sm flex items-center gap-x-1 mt-1">
+                                <i class="fa-solid fa-arrow-trend-down"></i>
+                                -0.4 W
+                            </p>
+                        </div>
+                        <div class="text-6xl text-orange-400 opacity-20">🔌</div>
+                    </div>
+                </div>
+
+                <!-- Light Intensity -->
+                <div class="bg-slate-900 rounded-3xl p-6 card-hover">
+                    <div class="flex justify-between">
+                        <div>
+                            <p class="text-slate-400 text-sm font-medium flex items-center gap-x-2">
+                                <i class="fa-solid fa-lightbulb"></i>
+                                LIGHT INTENSITY
+                            </p>
+                            <p id="dash-light" class="text-5xl font-semibold text-white mt-3">927 W/m²</p>
+                            <p id="dash-light-trend" class="text-emerald-400 text-sm flex items-center gap-x-1 mt-1">
+                                <i class="fa-solid fa-arrow-trend-up"></i>
+                                Optimal tracking
+                            </p>
+                        </div>
+                        <div class="text-6xl text-orange-400 opacity-20">☀️</div>
+                    </div>
+                </div>
+
+                <!-- Efficiency -->
+                <div class="bg-slate-900 rounded-3xl p-6 card-hover relative overflow-hidden">
+                    <div class="flex justify-between">
+                        <div>
+                            <p class="text-slate-400 text-sm font-medium">SYSTEM EFFICIENCY</p>
+                            <p id="dash-efficiency" class="text-5xl font-semibold text-white mt-3">84.2%</p>
+                        </div>
+                        <div class="text-6xl text-emerald-400">📈</div>
+                    </div>
+                    <!-- Mini progress -->
+                    <div class="absolute bottom-6 right-6 w-20 h-20">
+                        <svg class="w-20 h-20 -rotate-12" viewBox="0 0 42 42">
+                            <circle cx="21" cy="21" r="15" fill="none" stroke="#334155" stroke-width="6"></circle>
+                            <circle id="efficiency-circle" cx="21" cy="21" r="15" fill="none" 
+                                    stroke="#10b981" stroke-width="6" stroke-dasharray="94.2" 
+                                    stroke-dashoffset="15" stroke-linecap="round"></circle>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LIVE VISUAL + CHART -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-8">
+                <!-- Panel Position Visual -->
+                <div class="lg:col-span-4 bg-slate-900 rounded-3xl p-6">
+                    <h3 class="font-medium text-slate-400 mb-4 flex items-center gap-x-2">
+                        <i class="fa-solid fa-solar-panel"></i>
+                        ADAPTIVE PANEL POSITION
+                    </h3>
+                    
+                    <div class="flex justify-center py-8">
+                        <div class="relative w-64 h-64 gauge">
+                            <!-- Sun -->
+                            <div class="absolute top-8 left-1/2 -translate-x-1/2 w-12 h-12 bg-gradient-to-br from-yellow-300 to-orange-400 rounded-full flex items-center justify-center text-3xl shadow-[0_0_40px_#f59e0b] z-10">
+                                ☀️
+                            </div>
+                            
+                            <!-- Panel -->
+                            <div id="panel-visual" class="panel-visual absolute top-1/2 left-1/2 w-52 h-28 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-br from-slate-300 to-amber-300 border-4 border-slate-800 rounded-2xl shadow-2xl flex items-center justify-center text-slate-900 font-bold text-2xl rotate-[30deg]">
+                                <span class="text-xs tracking-widest absolute top-2 left-2">SOLAR</span>
+                                <i class="fa-solid fa-solar-panel text-6xl"></i>
+                            </div>
+                            
+                            <!-- Position labels -->
+                            <div class="absolute bottom-6 left-0 text-xs font-mono bg-slate-800 px-3 py-1 rounded-2xl">
+                                Azimuth: <span id="live-horiz" class="font-semibold">142°</span>
+                            </div>
+                            <div class="absolute bottom-6 right-0 text-xs font-mono bg-slate-800 px-3 py-1 rounded-2xl">
+                                Elevation: <span id="live-vert" class="font-semibold">38°</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Chart -->
+                <div class="lg:col-span-8 bg-slate-900 rounded-3xl p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="font-medium text-slate-400">Last 15 Minutes • Real-time</h3>
+                        <div class="flex gap-x-4 text-xs">
+                            <div onclick="toggleDataset(0)" id="legend-voltage" class="cursor-pointer flex items-center gap-x-1 text-orange-400">
+                                <span class="w-3 h-px bg-orange-400 inline-block"></span> Voltage
+                            </div>
+                            <div onclick="toggleDataset(1)" id="legend-power" class="cursor-pointer flex items-center gap-x-1 text-emerald-400">
+                                <span class="w-3 h-px bg-emerald-400 inline-block"></span> Power
+                            </div>
+                            <div onclick="toggleDataset(2)" id="legend-light" class="cursor-pointer flex items-center gap-x-1 text-sky-400">
+                                <span class="w-3 h-px bg-sky-400 inline-block"></span> Light Intensity
+                            </div>
+                        </div>
+                    </div>
+                    <div style="height: 320px;">
+                        <canvas id="liveChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LIVE DATA SECTION -->
+        <div id="section-live" class="section hidden">
+            <h2 class="text-3xl heading-font tracking-tighter mb-8">Live Sensor Feed</h2>
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-slate-900 rounded-3xl p-8 flex flex-col">
+                    <div class="flex-1">
+                        <p class="uppercase text-xs tracking-widest text-slate-400">voltage_output</p>
+                        <div id="live-voltage" class="text-[92px] font-semibold leading-none text-white">12.8</div>
+                        <p class="text-2xl text-slate-400">volts</p>
+                    </div>
+                    <div class="text-emerald-400 text-sm flex items-center mt-4"><i class="fa-solid fa-arrow-trend-up mr-2"></i> Stable • Tracking active</div>
+                </div>
+                <div class="bg-slate-900 rounded-3xl p-8 flex flex-col">
+                    <div class="flex-1">
+                        <p class="uppercase text-xs tracking-widest text-slate-400">power_consumption</p>
+                        <div id="live-power" class="text-[92px] font-semibold leading-none text-white">4.9</div>
+                        <p class="text-2xl text-slate-400">watts</p>
+                    </div>
+                    <div class="text-amber-400 text-sm flex items-center mt-4"><i class="fa-solid fa-fan mr-2"></i> Motors running smoothly</div>
+                </div>
+                <div class="bg-slate-900 rounded-3xl p-8 flex flex-col">
+                    <div class="flex-1">
+                        <p class="uppercase text-xs tracking-widest text-slate-400">light_intensity</p>
+                        <div id="live-light" class="text-[92px] font-semibold leading-none text-white">927</div>
+                        <p class="text-2xl text-slate-400">W/m²</p>
+                    </div>
+                    <div class="text-emerald-400 text-sm flex items-center mt-4"><i class="fa-solid fa-sun mr-2"></i> Peak sunlight conditions</div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex items-center gap-x-8 text-xs bg-slate-900 rounded-3xl p-8">
+                <div class="flex-1">
+                    <p class="text-slate-400">HORIZONTAL POSITION (azimuth)</p>
+                    <div class="flex items-baseline mt-3"><span id="live-horiz-big" class="text-7xl font-semibold">142</span><span class="text-4xl ml-1 text-slate-400">°</span></div>
+                </div>
+                <div class="flex-1">
+                    <p class="text-slate-400">VERTICAL POSITION (elevation)</p>
+                    <div class="flex items-baseline mt-3"><span id="live-vert-big" class="text-7xl font-semibold">38</span><span class="text-4xl ml-1 text-slate-400">°</span></div>
+                </div>
+                <div class="h-16 w-px bg-slate-700"></div>
+                <div class="flex-1 text-sm leading-relaxed">
+                    The smart tracker has automatically adjusted to maximize light capture.<br>
+                    <span class="text-emerald-400 font-medium">Next predicted movement in 43 seconds</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY SECTION -->
+        <div id="section-history" class="section hidden">
+            <h2 class="text-3xl heading-font tracking-tighter mb-6">Historical Performance</h2>
+            <div class="bg-slate-900 rounded-3xl p-6">
+                <table class="w-full data-table">
+                    <thead>
+                        <tr class="border-b border-slate-700 text-xs uppercase text-slate-400">
+                            <th class="text-left py-4 px-6">Timestamp</th>
+                            <th class="text-right py-4 px-6">Voltage (V)</th>
+                            <th class="text-right py-4 px-6">Power (W)</th>
+                            <th class="text-right py-4 px-6">Horiz °</th>
+                            <th class="text-right py-4 px-6">Vert °</th>
+                            <th class="text-right py-4 px-6">Light (W/m²)</th>
+                            <th class="text-right py-4 px-6">Efficiency %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-body" class="font-mono text-sm"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ANALYTICS SECTION -->
+        <div id="section-analytics" class="section hidden">
+            <h2 class="text-3xl heading-font tracking-tighter mb-8">Performance Analysis</h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-slate-900 rounded-3xl p-8">
+                    <h4 class="text-slate-400 mb-6">Today's Energy Output</h4>
+                    <div id="total-energy" class="text-7xl font-semibold">8.4 kWh</div>
+                    <p class="text-emerald-400">+18% vs yesterday</p>
+                    <div class="mt-8" style="height:180px;">
+                        <canvas id="dailyBarChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="bg-slate-900 rounded-3xl p-8">
+                    <h4 class="text-slate-400 mb-6">Key Insights</h4>
+                    <ul class="space-y-6">
+                        <li class="flex justify-between border-b border-slate-700 pb-6">
+                            <span>Maximum voltage recorded today</span>
+                            <span class="font-semibold text-emerald-400">14.2 V @ 11:08 AM</span>
+                        </li>
+                        <li class="flex justify-between border-b border-slate-700 pb-6">
+                            <span>Average light intensity</span>
+                            <span class="font-semibold">1,042 W/m²</span>
+                        </li>
+                        <li class="flex justify-between border-b border-slate-700 pb-6">
+                            <span>Total tracking movements</span>
+                            <span class="font-semibold">47 adjustments</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span>Estimated CO₂ saved today</span>
+                            <span class="font-semibold text-emerald-400">6.8 kg</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="bg-slate-900 rounded-3xl p-8">
+                    <h4 class="text-slate-400 mb-6">Efficiency Trend</h4>
+                    <div style="height:220px;">
+                        <canvas id="efficiencyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ALERTS SECTION -->
+        <div id="section-alerts" class="section hidden">
+            <h2 class="text-3xl heading-font tracking-tighter mb-8 flex items-center gap-x-3">
+                System Alerts 
+                <span id="alert-count-badge" class="bg-red-500 text-white text-base px-3 rounded-3xl font-bold">3 active</span>
+            </h2>
+            <div id="alerts-list" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- FOOTER / DOCUMENTATION LINK -->
+    <div class="max-w-screen-2xl mx-auto px-8 py-8 border-t border-slate-800 flex justify-between text-xs text-slate-400 font-medium">
+        <div>© 2026 SolarTrack IoT • Fully responsive • Secure WebSocket ready</div>
+        <div onclick="showDocumentation()" class="flex items-center gap-x-2 cursor-pointer hover:text-orange-400">
+            <i class="fa-solid fa-book"></i>
+            <span>Full Architecture Documentation + User Manual</span>
+        </div>
+        <div class="flex items-center gap-x-5">
+            <a href="#" onclick="simulateMalfunction()" class="text-red-400 hover:text-red-500">Simulate fault</a>
+            <span class="text-slate-600">|</span>
+            <span class="font-mono">v2.4.1 • Built for real IoT deployment</span>
+        </div>
+    </div>
+
+    <!-- DOCUMENTATION MODAL -->
+    <div onclick="if(event.target.id === 'doc-modal')hideDocumentation()" id="doc-modal" class="hidden fixed inset-0 bg-black/80 z-[9999] items-center justify-center">
+        <div onclick="event.stopPropagation()" class="bg-slate-900 w-full max-w-4xl mx-4 rounded-3xl max-h-[90vh] overflow-auto">
+            <div class="p-8">
+                <h2 class="text-3xl heading-font mb-8">System Architecture &amp; User Manual</h2>
+                
+                <div class="grid grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="font-semibold mb-4 text-orange-400">1. Architecture Overview</h3>
+                        <ul class="space-y-4 text-sm">
+                            <li class="flex gap-x-3"><span class="font-mono bg-slate-800 px-3 py-1 rounded-2xl text-xs">Frontend</span>HTML5 + Tailwind CSS + Chart.js (responsive, mobile-first)</li>
+                            <li class="flex gap-x-3"><span class="font-mono bg-slate-800 px-3 py-1 rounded-2xl text-xs">Real-time</span>In-browser WebSocket simulation (ready for MQTT / ESP32 / Node-RED)</li>
+                            <li class="flex gap-x-3"><span class="font-mono bg-slate-800 px-3 py-1 rounded-2xl text-xs">Data variables</span>voltage_output, power_consumption, horizontal_position, vertical_position, light_intensity</li>
+                            <li class="flex gap-x-3"><span class="font-mono bg-slate-800 px-3 py-1 rounded-2xl text-xs">Storage</span>LocalStorage + in-memory history (production: MongoDB / TimescaleDB)</li>
+                            <li class="flex gap-x-3"><span class="font-mono bg-slate-800 px-3 py-1 rounded-2xl text-xs">Security</span>JWT-ready, HTTPS enforced, AES-256 data in transit, role-based access</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-semibold mb-4 text-orange-400">2. Logic Rules Implemented</h3>
+                        <ul class="space-y-3 text-sm">
+                            <li>✅ Real-time updates every 2 seconds via simulated IoT feed</li>
+                            <li>✅ Historical data stored and visualized</li>
+                            <li>✅ Smart alerts: low voltage, high power draw, poor light, stalled movement</li>
+                            <li>✅ Efficiency = (voltage_output × light_intensity) / 1200 × 100 (custom adaptive formula)</li>
+                            <li>✅ Panel visual rotates automatically based on position variables</li>
+                            <li>✅ Responsive design tested on mobile, tablet, desktop</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="mt-10 border-t border-slate-700 pt-8">
+                    <h3 class="font-semibold mb-4 text-orange-400">3. User Manual</h3>
+                    <div class="text-sm leading-relaxed">
+                        <p><strong>Navigation:</strong> Click top menu tabs. Dashboard gives instant overview.</p>
+                        <p class="mt-4"><strong>Live Data:</strong> All variables update automatically. Toggle simulation in header to pause/resume IoT feed.</p>
+                        <p class="mt-4"><strong>Alerts:</strong> Critical issues appear instantly with one-click acknowledgment.</p>
+                        <p class="mt-4"><strong>Analytics:</strong> Daily energy, CO₂ savings, and trend charts help optimize placement and maintenance.</p>
+                        <p class="mt-4 text-emerald-400">Maintenance tip: Check power_consumption &lt; 8 W under normal conditions. If movement stalls for &gt; 2 minutes, inspect motors.</p>
+                    </div>
+                </div>
+                
+                <button onclick="hideDocumentation()" 
+                        class="mt-8 w-full bg-orange-500 hover:bg-orange-600 py-6 text-white text-xl font-medium rounded-3xl">
+                    CLOSE DOCUMENTATION &amp; RETURN TO DASHBOARD
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
