@@ -1,46 +1,111 @@
-#include <iostream>
-#include <windows.h>
+#include <Servo.h>
 
-int main() {
-    char key;
+// Servo objects (motor control ke liye)
+Servo servoH;  // horizontal movement
+Servo servoV;  // vertical movement
 
-    std::cout << "Indian Keyboard Piano \n";
-    std::cout << "Lower Swara : a s d f g h j  -> Sa Re Ga Ma Pa Dha Ni\n";
-    std::cout << "Upper Swara  : A S D F G H J  -> SA RE GA MA PA DHA NI\n";
-    std::cout << "q = Quit\n\n";
+// Initial positions (center se start karega)
+int posH = 90;
+int posV = 90;
 
-    while (true) {
-        std::cout << "Press a key: ";
-        std::cin >> key;
+// LDR sensor pins (4 directions)
+const int LDR_TL = A0; // Top Left
+const int LDR_TR = A1; // Top Right
+const int LDR_BL = A2; // Bottom Left
+const int LDR_BR = A3; // Bottom Right
 
-        if (key == 'q') {
-            std::cout << "Exiting piano...\n";
-            break;
-        }
+// Threshold values
+const int lightThreshold = 400; // itna light hona chahiye system chalne ke liye
+const int diffThreshold  = 15;  // minimum difference jisme movement hoga
+const int maxStep        = 15;  // ek baar me max kitna move karega
 
-      int duration = 400;
+// Smoothing (noise kam karne ke liye multiple readings ka average)
+const int smoothing = 5;
 
-// Middle octave (lowercase)
-if (key == 'a') { std::cout << "Sa\n";  Beep(261, duration); }
-else if (key == 's') { std::cout << "Re\n";  Beep(293, duration); }
-else if (key == 'd') { std::cout << "Ga\n";  Beep(329, duration); }
-else if (key == 'f') { std::cout << "Ma\n";  Beep(349, duration); }
-else if (key == 'g') { std::cout << "Pa\n";  Beep(392, duration); }
-else if (key == 'h') { std::cout << "Dha\n"; Beep(440, duration); }
-else if (key == 'j') { std::cout << "Ni\n";  Beep(493, duration); }
+// Yeh function ek sensor ka average value deta hai
+int readAverage(int pin) {
+  int sum = 0;
+  for (int i = 0; i < smoothing; i++) {
+    sum += analogRead(pin); // baar-baar read karke sum karega
+  }
+  return sum / smoothing; // average nikal ke return karega
+}
 
-// Upper octave (uppercase = ×2)
-else if (key == 'A') { std::cout << "SA (Upper)\n";  Beep(261 * 2, duration); }
-else if (key == 'S') { std::cout << "RE (Upper)\n";  Beep(293 * 2, duration); }
-else if (key == 'D') { std::cout << "GA (Upper)\n";  Beep(329 * 2, duration); }
-else if (key == 'F') { std::cout << "MA (Upper)\n";  Beep(349 * 2, duration); }
-else if (key == 'G') { std::cout << "PA (Upper)\n";  Beep(392 * 2, duration); }
-else if (key == 'H') { std::cout << "DHA (Upper)\n"; Beep(440 * 2, duration); }
-else if (key == 'J') { std::cout << "NI (Upper)\n";  Beep(493 * 2, duration); }
-        else {
-            std::cout << "Invalid key\n";
-        }
-    }
+void setup() {
 
-    return 0;
+  // Servo pins attach kiye
+  servoH.attach(9);
+  servoV.attach(10);
+
+  // Initial position set
+  servoH.write(posH);
+  servoV.write(posV);
+
+  // Serial monitor start (debug ke liye)
+  Serial.begin(9600);
+}
+
+void loop() {
+
+  // 🔹 Smooth sensor readings
+  int TL = readAverage(LDR_TL);
+  int TR = readAverage(LDR_TR);
+  int BL = readAverage(LDR_BL);
+  int BR = readAverage(LDR_BR);
+
+  // Average values nikal rahe hai
+  int topAvg    = (TL + TR) / 2;
+  int bottomAvg = (BL + BR) / 2;
+  int leftAvg   = (TL + BL) / 2;
+  int rightAvg  = (TR + BR) / 2;
+  int overall   = (TL + TR + BL + BR) / 4;
+
+  // 🔹 Low light check (raat ya cloudy condition)
+  if (overall < lightThreshold) {
+    Serial.println("Low light - system ruk gaya");
+    delay(1000);
+    return; // aage ka code skip
+  }
+
+  // -------- Vertical Movement --------
+  int diffV = topAvg - bottomAvg;
+
+  if (abs(diffV) > diffThreshold) {
+
+    // difference ke hisaab se step calculate
+    int step = map(abs(diffV), diffThreshold, 1023, 2, maxStep);
+
+    // agar upar zyada light hai toh upar move
+    // agar neeche zyada hai toh neeche move
+    posV += (diffV > 0) ? -step : step;
+
+    // servo limits ke andar rakho
+    posV = constrain(posV, 10, 170);
+
+    // servo ko new position bhejo
+    servoV.write(posV);
+  }
+
+  // -------- Horizontal Movement --------
+  int diffH = leftAvg - rightAvg;
+
+  if (abs(diffH) > diffThreshold) {
+
+    int step = map(abs(diffH), diffThreshold, 1023, 2, maxStep);
+
+    // agar left me light zyada hai toh left move
+    // agar right me zyada hai toh right move
+    posH += (diffH > 0) ? step : -step;
+
+    posH = constrain(posH, 10, 170);
+
+    servoH.write(posH);
+  }
+
+  // 🔹 Debug output (current position aur light show karega)
+  Serial.print("H: "); Serial.print(posH);
+  Serial.print(" | V: "); Serial.print(posV);
+  Serial.print(" | Light: "); Serial.println(overall);
+
+  delay(20); // thoda delay for smooth movement
 }
