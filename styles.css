@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500&display=swap');
+
+:root {
+    --tw-color-primary: #f59e0b;
+}
+
+body {
+    font-family: 'Inter', system_ui, sans-serif;
+}
+
+.heading-font {
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.live-dot {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.gauge {
+    position: relative;
+}
+
+.panel-visual {
+    transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.data-table tr {
+    transition: background-color 0.2s;
+}
+
+.data-table tr:hover {
+    background-color: #f8fafc1a;
+}
