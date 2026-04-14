@@ -1,4 +1,4 @@
-# 🌞 Smart Adaptive Solar Tracking System (SASTS)
+# 🌞 Smart Adaptive Solar Tracking System (SASTS)- By HackU
 
 > A low-cost, self-powered dual-axis solar tracking system that maximizes energy output using intelligent light-based tracking — with a real-time web dashboard for monitoring and control.
 
@@ -187,10 +187,9 @@ Maximizes energy harvested from each solar panel, reducing the number of panels 
 | Name |
 |---|
 | Vedang Tiwari |
+| Mayur Singh |
 | Mahek Tiwari |
 | Eshha Kuckian |
-| Mayur Singh |
-| Pratik Singh|
 
 *Shree L. R. Tiwari College of Engineering*
 
@@ -202,7 +201,11 @@ This project is developed for **educational and innovation purposes**.
 Feel free to fork, adapt, and build upon it for non-commercial use.
 
 ---
+## 📎 Video Link
 
+https://drive.google.com/file/d/1LH3cOWUQVn2p0_gdcqOmC1rO6zl3TSOs/view?usp=drivesdk
+
+---
 <p align="center">
   Made with ☀️ by Team SASTS &nbsp;|&nbsp; Aligned with UN SDGs 7, 9, 11, 13
 </p>
