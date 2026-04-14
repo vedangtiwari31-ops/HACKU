@@ -188,8 +188,9 @@ Maximizes energy harvested from each solar panel, reducing the number of panels 
 |---|
 | Vedang Tiwari |
 | Mahek Tiwari |
-| Mayur Singh |
 | Eshha Kuckian |
+| Mayur Singh |
+| Pratik Singh|
 
 *Shree L. R. Tiwari College of Engineering*
 
@@ -206,7 +207,4 @@ Feel free to fork, adapt, and build upon it for non-commercial use.
   Made with ☀️ by Team SASTS &nbsp;|&nbsp; Aligned with UN SDGs 7, 9, 11, 13
 </p>
 
-## 📎 License
-
-This project is developed for educational and innovation purposes.
 
