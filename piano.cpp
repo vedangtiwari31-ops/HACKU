@@ -1,111 +1,158 @@
 #include <Servo.h>
+#include <SoftwareSerial.h>
 
-// Servo objects (motor control ke liye)
-Servo servoH;  // horizontal movement
-Servo servoV;  // vertical movement
+// Servo objects banaye kyunki hume horizontal aur vertical movement control karna hai
+Servo servoH;
+Servo servoV;
 
-// Initial positions (center se start karega)
+// Bluetooth communication ke liye SoftwareSerial use kiya (hardware serial busy ho sakta hai)
+SoftwareSerial BT(2, 3); // RX, TX
+
+// Initial positions 90 rakhe kyunki yeh center position hoti hai (neutral start)
 int posH = 90;
 int posV = 90;
 
-// LDR sensor pins (4 directions)
+// Default auto mode true rakha taki system khud light track kare start se hi
+bool autoMode = true;
+
+
+// LDR pins define kiye kyunki 4 direction se light measure karni hai
 const int LDR_TL = A0; // Top Left
 const int LDR_TR = A1; // Top Right
 const int LDR_BL = A2; // Bottom Left
 const int LDR_BR = A3; // Bottom Right
 
-// Threshold values
-const int lightThreshold = 400; // itna light hona chahiye system chalne ke liye
-const int diffThreshold  = 15;  // minimum difference jisme movement hoga
-const int maxStep        = 15;  // ek baar me max kitna move karega
+// Minimum light threshold rakha taki andhere me unnecessary movement na ho
+const int lightThreshold = 80;
 
-// Smoothing (noise kam karne ke liye multiple readings ka average)
-const int smoothing = 5;
+// Difference threshold rakha taki choti fluctuations pe servo move na kare (noise avoid)
+const int diffThreshold  = 8;
 
-// Yeh function ek sensor ka average value deta hai
-int readAverage(int pin) {
-  int sum = 0;
-  for (int i = 0; i < smoothing; i++) {
-    sum += analogRead(pin); // baar-baar read karke sum karega
-  }
-  return sum / smoothing; // average nikal ke return karega
-}
+// Max step limit kiya taki servo smooth move kare, sudden jump na ho
+const int maxStep        = 4;
+
+// Loop delay rakha taki system stable rahe aur servo ko time mile move hone ka
+const int loopDelay      = 60;
 
 void setup() {
+  // Servos attach kiye specific pins pe
+  servoH.attach(11);
+  servoV.attach(8);
 
-  // Servo pins attach kiye
-  servoH.attach(9);
-  servoV.attach(10);
-
-  // Initial position set
+  // Starting me servo ko center pe set kiya
   servoH.write(posH);
   servoV.write(posV);
 
-  // Serial monitor start (debug ke liye)
+  // Serial start kiya debugging ke liye
   Serial.begin(9600);
+
+  // Bluetooth communication start kiya same baud rate pe
+  BT.begin(9600);
+
+  Serial.println("Start in AUTO mode");
 }
 
 void loop() {
 
-  // 🔹 Smooth sensor readings
-  int TL = readAverage(LDR_TL);
-  int TR = readAverage(LDR_TR);
-  int BL = readAverage(LDR_BL);
-  int BR = readAverage(LDR_BR);
+  // ===== BLUETOOTH INPUT =====
+  // Check kiya kyunki user manual commands bhej sakta hai
+  if (BT.available()) {
+    char cmd = BT.read();
 
-  // Average values nikal rahe hai
-  int topAvg    = (TL + TR) / 2;
-  int bottomAvg = (BL + BR) / 2;
-  int leftAvg   = (TL + BL) / 2;
-  int rightAvg  = (TR + BR) / 2;
-  int overall   = (TL + TR + BL + BR) / 4;
+    // Newline ignore kiya taki unwanted commands process na ho
+    if (cmd == '\n' || cmd == '\r') return;
 
-  // 🔹 Low light check (raat ya cloudy condition)
-  if (overall < lightThreshold) {
-    Serial.println("Low light - system ruk gaya");
-    delay(1000);
-    return; // aage ka code skip
+    Serial.print("CMD: ");
+    Serial.println(cmd);
+
+    // Mode toggle isliye rakha taki user auto aur manual mode switch kar sake
+    if (cmd == 'T') {
+      autoMode = !autoMode;
+
+      if (autoMode) Serial.println("AUTO MODE");
+      else Serial.println("MANUAL MODE");
+    }
+
+    // Manual control sirf tab allow kiya jab auto mode off ho
+    if (!autoMode) {
+      switch (cmd) {
+
+        // Har command servo position change karta hai specific direction me
+        case 'F': posV -= 5; break; // up
+        case 'B': posV += 5; break; // down
+        case 'L': posH -= 5; break; // left
+        case 'R': posH += 5; break; // right
+        case 'S': break; // stop (no movement)
+      }
+
+      // Limit lagayi taki servo physical limits cross na kare (damage avoid)
+      posH = constrain(posH, 20, 160);
+      posV = constrain(posV, 20, 160);
+
+      // Servo ko new position pe move karaya
+      servoH.write(posH);
+      servoV.write(posV);
+    }
   }
 
-  // -------- Vertical Movement --------
-  int diffV = topAvg - bottomAvg;
+  // ===== AUTO TRACKING =====
+  // Auto mode me system khud light follow kare
+  if (autoMode) {
 
-  if (abs(diffV) > diffThreshold) {
+    // 4 LDR se light intensity read ki
+    int TL = analogRead(LDR_TL);
+    int TR = analogRead(LDR_TR);
+    int BL = analogRead(LDR_BL);
+    int BR = analogRead(LDR_BR);
 
-    // difference ke hisaab se step calculate
-    int step = map(abs(diffV), diffThreshold, 1023, 2, maxStep);
+    // Average calculate kiya taki direction ka idea mile
+    int topAvg    = (TL + TR) / 2;
+    int bottomAvg = (BL + BR) / 2;
+    int leftAvg   = (TL + BL) / 2;
+    int rightAvg  = (TR + BR) / 2;
 
-    // agar upar zyada light hai toh upar move
-    // agar neeche zyada hai toh neeche move
-    posV += (diffV > 0) ? -step : step;
+    // Overall brightness check kiya taki low light me system idle rahe
+    int overall   = (TL + TR + BL + BR) / 4;
 
-    // servo limits ke andar rakho
-    posV = constrain(posV, 10, 170);
+    // Agar light bahut kam hai to movement skip kiya (energy + stability)
+    if (overall < lightThreshold) return;
 
-    // servo ko new position bhejo
-    servoV.write(posV);
+    // Vertical difference nikala (upar vs niche)
+    int diffV = topAvg - bottomAvg;
+
+    // Sirf tab move kiya jab difference significant ho (noise avoid)
+    if (abs(diffV) > diffThreshold) {
+
+      // Difference ke hisaab se step size adjust kiya (adaptive speed)
+      int step = map(abs(diffV), diffThreshold, 500, 1, maxStep);
+
+      // Direction decide kiya aur servo move kiya
+      posV += (diffV > 0) ? -step : step;
+
+      // Safety limits apply ki
+      posV = constrain(posV, 20, 160);
+
+      servoV.write(posV);
+    }
+
+    // Horizontal difference nikala (left vs right)
+    int diffH = leftAvg - rightAvg;
+
+    if (abs(diffH) > diffThreshold) {
+
+      // Step dynamic rakha smooth tracking ke liye
+      int step = map(abs(diffH), diffThreshold, 500, 1, maxStep);
+
+      // Direction ke hisaab se move kiya
+      posH += (diffH > 0) ? -step : step;
+
+      // Limits apply ki taki servo safe rahe
+      posH = constrain(posH, 20, 160);
+
+      servoH.write(posH);
+    }
+
+    // Delay diya taki system stable rahe aur jitter na ho
+    delay(loopDelay);
   }
-
-  // -------- Horizontal Movement --------
-  int diffH = leftAvg - rightAvg;
-
-  if (abs(diffH) > diffThreshold) {
-
-    int step = map(abs(diffH), diffThreshold, 1023, 2, maxStep);
-
-    // agar left me light zyada hai toh left move
-    // agar right me zyada hai toh right move
-    posH += (diffH > 0) ? step : -step;
-
-    posH = constrain(posH, 10, 170);
-
-    servoH.write(posH);
-  }
-
-  // 🔹 Debug output (current position aur light show karega)
-  Serial.print("H: "); Serial.print(posH);
-  Serial.print(" | V: "); Serial.print(posV);
-  Serial.print(" | Light: "); Serial.println(overall);
-
-  delay(20); // thoda delay for smooth movement
 }
